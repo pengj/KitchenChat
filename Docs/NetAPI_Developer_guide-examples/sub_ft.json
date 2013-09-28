@@ -1,0 +1,8 @@
+{"fileTransferSubscription": { 
+   "callbackReference": { 
+      "callbackData": "abcd", 
+      "notifyURL": "http://10.67.102.152/test" 
+   }, 
+   "clientCorrelator": "12345",
+   "duration":"5000" 
+}} 

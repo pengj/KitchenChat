@@ -1,0 +1,22 @@
+{"fileTransferSessionInformation": { 
+   "clientCorrelator": "104567", 
+   "fileInformation": { 
+      "fileDate": {"cDate": "2011-08-21T00:00:00-04:00"}, 
+      "fileDescription": "This is my latest picture", 
+      "fileDisposition": "Attachment", 
+      "fileSelector": { 
+         "hash": { 
+            "algorithm": "sha-1", 
+            "value": "58231FE8653BBCF371362F86D471913EE4B1DF2F" 
+         }, 
+         "name": "Sunset.jpg", 
+         "size": "4096", 
+         "type": "image/jpeg" 
+      }, 
+      "fileURL": "http://images.wikia.com/pixar/images/4/43/Sunset.jpg" 
+   }, 
+   "originatorAddress": "tel:+33611223355", 
+   "originatorName": "Max Muster", 
+   "receiverAddress": "tel:+33611223344", 
+   "receiverName": "Peter E. Xample" 
+}} 

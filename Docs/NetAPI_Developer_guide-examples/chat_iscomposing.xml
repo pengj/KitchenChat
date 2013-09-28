@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<chat:isComposing xmlns:chat="urn:oma:xml:rest:netapi:chat:1"> 
+   <state>active</state> 
+   <contenttype>text/plain</contenttype> 
+   <refresh>90</refresh> 
+</chat:isComposing> 
+

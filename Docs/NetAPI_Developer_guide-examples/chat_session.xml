@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chat:chatSessionInformation xmlns:chat="urn:oma:xml:rest:netapi:chat:1">
+   <subject>Dinner tonight</subject>
+   <originatorAddress>tel:+33611223355</originatorAddress>
+   <originatorName>Alice</originatorName>
+   <tParticipantAddress>tel:+33611223344</tParticipantAddress>
+   <tParticipantName>Bob</tParticipantName>
+   <clientCorrelator>23456</clientCorrelator>
+</chat:chatSessionInformation>
+

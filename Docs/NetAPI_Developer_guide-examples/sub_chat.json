@@ -1,0 +1,15 @@
+{"chatNotificationSubscription":
+	{
+		"callbackReference":
+		{
+			"notifyURL":"http://10.67.102.152/test/",
+			"callbackData":"123",
+			"notificationFormat":"JSON"
+		},
+		"confirmedChatSupported":true,
+		"adhocChatSupported":false,
+		"duration":5000,
+		"clientCorrelator":"12345"
+	}
+}
+

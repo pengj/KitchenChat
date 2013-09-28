@@ -11,6 +11,14 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		
+		//Test for the WEB API
+		
+		//setup the inital
+		
+		
+		//setup the 
 	}
 
 	@Override

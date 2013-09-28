@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chat:chatMessage xmlns:chat="urn:oma:xml:rest:netapi:chat:1">
+   <text>Hello World</text>
+   <reportRequest>Delivered</reportRequest>
+   <reportRequest>Displayed</reportRequest>
+</chat:chatMessage>

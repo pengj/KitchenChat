@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chat:messageStatusReport xmlns:chat="urn:oma:xml:rest:netapi:chat:1">
+   <status>Displayed</status>
+</chat:messageStatusReport>

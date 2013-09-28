@@ -1,0 +1,10 @@
+{"chatSessionInformation": 
+	{
+		"subject": "Dinner tonight",
+		"clientCorrelator": 23456,
+		"originatorAddress": "tel:+33611223344",
+		"originatorName": "Alice",
+		"tParticipantAddress": "tel:+33611223355",
+		"tParticipantName": "Bob"
+	}
+}

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ft:fileTransferSessionInformation xmlns:ft="urn:oma:xml:rest:netapi:filetransfer:1">
+  <originatorAddress>tel:+33611223355</originatorAddress>
+  <originatorName>Max Muster</originatorName>
+  <receiverAddress>tel:+33611223344</receiverAddress>
+  <receiverName>Peter E. Xample</receiverName>
+  <fileInformation>
+    <fileSelector>
+      <name>sunset.jpg</name>
+      <type>image/jpeg</type>
+      <size>10312</size>
+      <hash>
+        <algorithm>sha-1</algorithm>
+        <value>0d13ce1141e4a204251a0b4fbd440da78d2b8dca</value>
+      </hash>
+    </fileSelector>
+    <fileDisposition>Attachment</fileDisposition>
+    <fileDescription>This is my latest picture</fileDescription>
+    <fileDate>
+      <cDate>2011-08-21T00:00:00-04:00</cDate>
+    </fileDate>
+    <fileURL/>
+  </fileInformation>
+  <clientCorrelator>123</clientCorrelator>
+</ft:fileTransferSessionInformation>
+

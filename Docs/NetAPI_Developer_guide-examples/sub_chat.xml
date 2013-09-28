@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<chat:chatNotificationSubscription xmlns:chat="urn:oma:xml:rest:netapi:chat:1">
+   <confirmedChatSupported>true</confirmedChatSupported>
+   <adhocChatSupported>false</adhocChatSupported>
+   <clientCorrelator>12345</clientCorrelator>
+   <duration>5000</duration>
+   <callbackReference>
+      <notifyURL>http://10.67.102.152/test/</notifyURL>
+      <callbackData>123</callbackData>
+      <notificationFormat>XML</notificationFormat>
+   </callbackReference>
+</chat:chatNotificationSubscription>
+

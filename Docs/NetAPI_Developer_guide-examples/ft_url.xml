@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ft:fileTransferSessionInformation xmlns:ft="urn:oma:xml:rest:netapi:filetransfer:1">
+  <originatorAddress>tel:+33611223355</originatorAddress>
+  <originatorName>Max Muster</originatorName>
+  <receiverAddress>tel:+33611223344</receiverAddress>
+  <receiverName>Peter E. Xample</receiverName>
+  <fileInformation>
+    <fileSelector>
+      <name>Sunset.jpg</name>
+      <type>text/plain</type>
+      <size>10268</size>
+      <hash>
+        <algorithm>sha-1</algorithm>
+        <value>5040cf93baddc7ae5b6189a4cda1e571142dee0f</value>
+      </hash>
+    </fileSelector>
+    <fileDisposition>Attachment</fileDisposition>
+    <fileDescription>This is my latest picture</fileDescription>
+    <fileDate>
+      <cDate>2011-08-21T00:00:00-04:00</cDate>
+    </fileDate>
+    <fileURL>http://images.wikia.com/pixar/images/4/43/Sunset.jpg</fileURL>
+  </fileInformation>
+  <clientCorrelator>123</clientCorrelator>
+</ft:fileTransferSessionInformation>
+

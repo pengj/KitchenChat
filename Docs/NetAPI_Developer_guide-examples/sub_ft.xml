@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ft:fileTransferSubscription xmlns:ft="urn:oma:xml:rest:netapi:filetransfer:1">
+  <callbackReference>
+    <notifyURL>http://10.67.102.152/test/</notifyURL>
+    <callbackData>abcd</callbackData>
+  </callbackReference>
+  <duration>5000</duration>
+  <clientCorrelator>12345</clientCorrelator>
+</ft:fileTransferSubscription>
