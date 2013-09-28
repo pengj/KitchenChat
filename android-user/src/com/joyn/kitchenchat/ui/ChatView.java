@@ -1,278 +1,526 @@
+/*******************************************************************************
+ * Software Name : RCS IMS Stack
+ *
+ * Copyright (C) 2010 France Telecom S.A.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ ******************************************************************************/
+
 package com.joyn.kitchenchat.ui;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.gsma.joyn.JoynServiceListener;
+import org.gsma.joyn.chat.ChatLog;
+import org.gsma.joyn.chat.ChatMessage;
+import org.gsma.joyn.chat.ChatService;
+import org.gsma.joyn.contacts.ContactsService;
 
 import com.joyn.kitchenchat.R;
-import com.joyn.kitchenchat.network.Contact;
-import com.joyn.kitchenchat.network.RCS_Wrapper_Send;
-import com.joyn.kitchenchat.network.RCS_Wrapper_Send.OnMessageReceivedListener;
 import com.joyn.kitchenchat.network.Utils;
 
-import android.app.Activity;
-import android.content.Intent;
+import android.app.AlertDialog;
+import android.app.Dialog;
+import android.app.ListActivity;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
-import android.graphics.Color;
-import android.graphics.Typeface;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.text.Editable;
+import android.text.SpannableStringBuilder;
+import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.util.Log;
-import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.View.OnKeyListener;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 
-public class ChatView extends Activity implements OnMessageReceivedListener {
 
-	private static final String TAG = "ChatView";
-
-	private RCS_Wrapper_Send chatController;
-	private EditText input_message;
-	private ScrollView mScrollView;
-	private ViewGroup mMessageContainer;
-
-	private String first_text;
-	private String remoteContact;
-
-	
-	private ImageView image_contact;
-	
-	private TextView title_tv;
-	
-	private boolean float_shown=false;
-	
-	private boolean event_on = false;
-	private boolean todo_on =false;
-	
-	private String date;
-	private String time;
-	private String place;
-	private long time_long;
-	
-	 SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-	
-
-	public void onCreate(Bundle savedInstance) {
-		super.onCreate(savedInstance);
-
-		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-		setContentView(R.layout.chat_view);
-
-		// This will contain extras info we need to show
-		// Like the friend contact
-		Bundle extras = getIntent().getExtras();
-
-		Contact friend = extras.getParcelable("friend");
-		Contact me = extras.getParcelable("me");
-
-		// Handle the Send button click
-		Button sendMessageButton = (Button) findViewById(R.id.sendButton);
-		sendMessageButton.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				sendMessage();
-			}
-		});
-
-		mScrollView = (ScrollView) findViewById(R.id.scrollView);
-		mMessageContainer = (ViewGroup) findViewById(R.id.messageContainer);
-
-		// Show the friend name
-		remoteContact = getIntent().getStringExtra("contact");
-		if (remoteContact != null) {
-			Log.d(TAG, "RemoteContact=" + remoteContact);
-			friend = Utils.getContactFromPhoneNumber(this, remoteContact);
-		}else{
-			
-			remoteContact = friend.getPhoneNumber();
-		}
-
-
-		// based on the phone number, find friend name
-	/*	TextView friendLabel = (TextView) findViewById(R.id.friendLabel);
-		friendLabel.setText(friend.getName());*/
-		//setTitle(getString(R.string.chat_with) + " " + friend.getName());
-		title_tv=(TextView)findViewById(R.id.chatview_title);
-		set_Title("  "+getString(R.string.chat_with) + " " + friend.getName());
-		//set the image for the contact
-		image_contact=(ImageView)findViewById(R.id.chatview_friends);
-
-		// the input message
-		input_message = (EditText) findViewById(R.id.messageBox);
-		input_message.addTextChangedListener(new TextWatcher() {
-
-			@Override
-			public void afterTextChanged(Editable s) {
-				// TODO Auto-generated method stub
-			}
-
-			@Override
-			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-				// TODO Auto-generated method stub
-
-			}
-
-			@Override
-			public void onTextChanged(CharSequence s, int start, int before, int count) {
-				// TODO Auto-generated method stub
-				Log.d(TAG, "input="+s);
-			}
-		});
-
-		// TODO: use a ChatController to handle chat messages
-		/*
-		 * ChatController chatController = new ChatController (me, friend);
-		 * chatController.setOnMessageReceivedListener
-		 * (onMessageReceivedListener);
-		 */
-		Log.d(TAG, "contract=" + friend.getPhoneNumber());
-		chatController = new RCS_Wrapper_Send(this);
-
-	}
-	
-	
-	
-	
+/**
+ * Chat view
+ */
+public abstract class ChatView extends ListActivity implements OnClickListener, OnKeyListener, JoynServiceListener {	
+    /**
+     * UI handler
+     */
+	protected Handler handler = new Handler();
+    
+    /**
+     * Progress dialog
+     */
+	protected Dialog progressDialog = null;
+    
+    /**
+	 * Chat API
+	 */
+	protected ChatService chatApi = null;
+    
 	/**
-	 * set the title bar
-	 * **/
-	private void set_Title(String friend_name)
-	{
-		Typeface face=Typeface.createFromAsset(getAssets(), "Roboto-Regular.ttf");
-		title_tv.setTypeface(face);
-		
-		title_tv.setText(friend_name);
-	}
-	
-	
-	/**
-	 * set the contact image
-	 * **/
-	private void set_Image()
-	{
-		
-	}
-	
-	/**
-	 * The back button action
-	 * ***/
-	public void onBackAction(View v)
-	{
-		finish();
-	}
+	 * Message composer
+	 */
+    protected EditText composeText;
+    
+    /**
+     * Send button
+     */
+    protected Button sendBtn;
+    
+    /**
+     * Message list adapter
+     */
+    protected MessageListAdapter msgListAdapter;
+    
+    /**
+	 * Contacts API
+	 */
+    protected ContactsService contactsApi;    
+       
+    /**
+     * Utility class to manage the is-composing status
+     */
+    protected IsComposingManager composingManager = null;
 	
 	
 	@Override
-	public void onMessageReceived(android.os.Message message) {
-		showMessage((String) message.obj, false);
-	
-	}
-	
-	protected void showMessage (String message, boolean leftSide) {
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         
-		LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-		params.setMargins(0, 5, 0, 0);
-		Typeface face=Typeface.createFromAsset(getAssets(), "Roboto-Regular.ttf");
-		
-        if (leftSide) {
-        	final View messageView = View.inflate(getApplicationContext(), R.layout.chattext_right, null);
+        // Set layout
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        setContentView(R.layout.chat_view);
+        
+        // Set the message list adapter
+        msgListAdapter = new MessageListAdapter(this);
+        setListAdapter(msgListAdapter);
+        
+      
+        // Set message composer callbacks
+        composeText = (EditText)findViewById(R.id.userText);
+        composeText.setOnClickListener(this);
+        composeText.setOnKeyListener(this);
+        composeText.addTextChangedListener(mUserTextWatcher);
+                
+		// Set send button listener
+        sendBtn = (Button)findViewById(R.id.send_button);
+        sendBtn.setOnClickListener(this);
+               
+        // Instanciate API
+        chatApi = new ChatService(getApplicationContext(), this);
+        contactsApi = new ContactsService(getApplicationContext(), null);
+        
+        // Connect API
+        chatApi.connect();
+        contactsApi.connect();
+    }
 
-    		TextView textView = (TextView)messageView.findViewById(R.id.chattext_left_text);
+    @Override
+    public void onDestroy() {
+    	super.onDestroy();
 
-    		textView.setText(message);
-            
-            textView.setBackgroundColor(getResources().getColor(R.color.aqua));
-    		
-    		//textView.setLayoutParams(params);
-    		 
-    		textView.setTypeface(face); 
-    		textView.setTextSize(18);
-    		textView.setTextColor(getResources().getColor(android.R.color.black));
-    		
-    		messageView.setLayoutParams(params);
-    		
-    		runOnUiThread(new Runnable() {
-    			@Override
-    			public void run() {
-    				
-    				mMessageContainer.addView(messageView);
+        // Disconnect API
+        chatApi.disconnect();
+        contactsApi.disconnect();
+    }
+    
+    /**
+     * Message composer listener
+     * 
+     * @param v View
+     */
+    public void onClick(View v) {
+        sendText();
+    }
 
-    				// Scroll to bottom
-    				if (mScrollView.getChildAt(0) != null) {
-    					mScrollView.scrollTo(mScrollView.getScrollX(), mScrollView.getChildAt(0).getHeight());
-    				}
+    /**
+     * Message composer listener
+     * 
+     * @param v View
+     * @param keyCode Key code
+     * @event Key event
+     */
+    public boolean onKey(View v, int keyCode, KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            switch (keyCode) {
+                case KeyEvent.KEYCODE_DPAD_CENTER:
+                case KeyEvent.KEYCODE_ENTER:
+                    sendText();
+                    return true;
+            }
+        }
+        return false;
+    }
+    
+	/**
+	 * Hide progress dialog
+	 */
+    public void hideProgressDialog() {
+    	if (progressDialog != null && progressDialog.isShowing()) {
+			progressDialog.dismiss();
+			progressDialog = null;
+		}
+    }        
+    
+    /**
+     * Add a message in the message history
+     * 
+     * @param direction Direction
+     * @param contact Contact
+     * @param text Text message
+     */
+    protected void addMessageHistory(int direction, String contact, String text) {
+		TextMessageItem item = new TextMessageItem(direction, contact, text);
+		msgListAdapter.add(item);
+    }
 
-    				mScrollView.fullScroll(View.FOCUS_DOWN);
-    			}
-    		});
-        } else {
-        	final View messageView = View.inflate(getApplicationContext(), R.layout.chattext_left, null);
-
-    		TextView textView = (TextView)messageView.findViewById(R.id.chattext_left_text);
-
-    		textView.setText(message);
-
-        	textView.setBackgroundColor(getResources().getColor(R.color.lime));
-        	textView.setGravity(Gravity.RIGHT);
-        	//textView.setLayoutParams(params);
-
-    		textView.setTypeface(face); 
-    		textView.setTextSize(18);
-    		textView.setTextColor(getResources().getColor(android.R.color.black));
-    		
-    		messageView.setLayoutParams(params);
-        	
-        	runOnUiThread(new Runnable() {
-    			@Override
-    			public void run() {
-    				
-    				mMessageContainer.addView(messageView);
-
-    				// Scroll to bottom
-    				if (mScrollView.getChildAt(0) != null) {
-    					mScrollView.scrollTo(mScrollView.getScrollX(), mScrollView.getChildAt(0).getHeight());
-    				}
-
-    				mScrollView.fullScroll(View.FOCUS_DOWN);
-    			}
-    		});
+    /**
+     * Add a notif in the message history
+     * 
+     * @param notif Notification
+     */
+    protected void addNotifHistory(String notif) {
+		NotifMessageItem item = new NotifMessageItem(notif);
+		msgListAdapter.add(item);
+    }    
+    
+    /**
+     * Send a text and display it
+     */
+    private void sendText() {
+        String text = composeText.getText().toString();
+        if ((text == null) || (text.length() == 0)) {
+        	return;
+        }
+        
+        // Check if the service is available
+    	boolean registered = false;
+    	try {
+    		if ((chatApi != null) && chatApi.isServiceRegistered()) {
+    			registered = true;
+    		}
+    	} catch(Exception e) {}
+        if (!registered) {
+	    	Utils.showMessage(ChatView.this, getString(R.string.label_service_not_available));
+	    	return;
         }
 
+        // Send text message
+        String msgId = sendMessage(text);
+    	if (msgId != null) {
+	    	// Add text to the message history
+	        addMessageHistory(ChatLog.Message.Direction.OUTGOING, getString(R.string.label_me), text);
+	        composeText.setText(null);
+    	} else {
+	    	Utils.showMessage(ChatView.this, getString(R.string.label_send_im_failed));
+    	}
+    }
+    
+	/**
+	 * Display received message
+	 * 
+	 * @param msg Instant message
+	 */
+    protected void displayReceivedMessage(ChatMessage msg) {
+		String contact = msg.getContact();
+		String txt = msg.getMessage();
+        addMessageHistory(ChatLog.Message.Direction.INCOMING, contact, txt);
+    }
 
-	
-	}
 
-	protected void sendMessage() {
-		String message = input_message.getText().toString();
-		input_message.setText("");
-
-		chatController.sendMessage(message);
-
-		showMessage(message, true);
-
+    
+    /**********************************************************************
+     ******************	Deals with isComposing feature ********************
+     **********************************************************************/
+    
+    private final TextWatcher mUserTextWatcher = new TextWatcher(){
+		@Override
+		public void afterTextChanged(Editable s) {
+			// Check if the text is not null.
+			// we do not wish to consider putting the edit text back to null (like when sending message), is having activity 
+			if (s.length()>0) {
+				// Warn the composing manager that we have some activity
+				if (composingManager != null) {
+					composingManager.hasActivity();
+				}
+			}
+		}
+		@Override
+		public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 		
-	}
+		@Override
+		public void onTextChanged(CharSequence s, int start, int before, int count) {}
+    };
+    
+    /**
+	 * Utility class to handle is_typing timers (see RFC3994)  
+	 */
+	protected class IsComposingManager{
 
-	@Override
-	protected void onDestroy() {
-		chatController.Quit_MSG();
-		super.onDestroy();
-	}
+        // Idle time out (in ms)
+        private int idleTimeOut = 0;
 
+ 		// Active state refresh interval (in ms)
+		private final static int ACTIVE_STATE_REFRESH = 60*1000; 
+
+		// Clock handler
+		private ClockHandler handler = new ClockHandler();
+
+		// Is composing state
+		public boolean isComposing = false;
+
+		// Event IDs
+		private final static int IS_STARTING_COMPOSING = 1;
+		private final static int IS_STILL_COMPOSING = 2;
+		private final static int MESSAGE_WAS_SENT = 3;
+		private final static int ACTIVE_MESSAGE_NEEDS_REFRESH = 4;
+		private final static int IS_IDLE = 5;
+
+        public IsComposingManager(int timeout) {
+            idleTimeOut = timeout;
+        }
+
+		// Clock handler class
+		private class ClockHandler extends Handler {
+			public void handleMessage(Message msg){
+				switch(msg.what){
+					case IS_STARTING_COMPOSING :{
+						// Send a typing status "active"
+						ChatView.this.setTypingStatus(true);
 	
+						// In IDLE_TIME_OUT we will need to send a is-idle status message 
+						handler.sendEmptyMessageDelayed(IS_IDLE, idleTimeOut);
+	
+						// In ACTIVE_STATE_REFRESH we will need to send an active status message refresh
+						handler.sendEmptyMessageDelayed(ACTIVE_MESSAGE_NEEDS_REFRESH, ACTIVE_STATE_REFRESH);
+						break;
+					}    			
+					case IS_STILL_COMPOSING :{
+						// Cancel the IS_IDLE messages in queue, if there was one
+						handler.removeMessages(IS_IDLE);
+	
+						// In IDLE_TIME_OUT we will need to send a is-idle status message
+						handler.sendEmptyMessageDelayed(IS_IDLE, idleTimeOut);
+						break;
+					}
+					case MESSAGE_WAS_SENT :{
+						// We are now going to idle state
+						composingManager.hasNoActivity();
+	
+						// Cancel the IS_IDLE messages in queue, if there was one
+						handler.removeMessages(IS_IDLE);
+	
+						// Cancel the ACTIVE_MESSAGE_NEEDS_REFRESH messages in queue, if there was one
+						handler.removeMessages(ACTIVE_MESSAGE_NEEDS_REFRESH);
+						break;
+					}	    			
+					case ACTIVE_MESSAGE_NEEDS_REFRESH :{
+						// We have to refresh the "active" state
+						ChatView.this.setTypingStatus(true);
+	
+						// In ACTIVE_STATE_REFRESH we will need to send an active status message refresh
+						handler.sendEmptyMessageDelayed(ACTIVE_MESSAGE_NEEDS_REFRESH, ACTIVE_STATE_REFRESH);
+						break;
+					}
+					case IS_IDLE :{
+						// End of typing
+						composingManager.hasNoActivity();
+	
+						// Send a typing status "idle"
+						ChatView.this.setTypingStatus(false);
+	
+						// Cancel the ACTIVE_MESSAGE_NEEDS_REFRESH messages in queue, if there was one
+						handler.removeMessages(ACTIVE_MESSAGE_NEEDS_REFRESH);
+						break;
+					}
+				}
+			}
+		}
+
+		/**
+		 * Edit text has activity
+		 */
+		public void hasActivity() {
+			// We have activity on the edit text
+			if (!isComposing){
+				// If we were not already in isComposing state
+				handler.sendEmptyMessage(IS_STARTING_COMPOSING);
+				isComposing = true;
+			} else {
+				// We already were composing
+				handler.sendEmptyMessage(IS_STILL_COMPOSING);
+			}
+		}
+
+		/**
+		 * Edit text has no activity anymore
+		 */
+		public void hasNoActivity(){
+			isComposing = false;
+		}
+
+		/**
+		 * The message was sent
+		 */
+		public void messageWasSent(){
+			handler.sendEmptyMessage(MESSAGE_WAS_SENT);
+		}
+	}
+	
+    
+
+	/**
+	 * Message item
+	 */
+	protected abstract class MessageItem {
+		private int direction;
+		
+	    private String contact;
+
+	    public MessageItem(int direction, String contact) {
+	    	this.direction = direction;
+    		this.contact = contact;
+	    }
+	    
+	    public int getDirection() {
+	    	return direction;
+	    }
+	    
+	    public String getContact() {
+	    	return contact;
+	    }
+	}	
+	
+	/**
+	 * Text message item
+	 */
+	private class TextMessageItem extends MessageItem {
+	    private String text;
+	    
+	    public TextMessageItem(int direction, String contact, String text) {
+	    	super(direction, contact);
+	    	
+	    	this.text = text;
+	    }
+	    
+	    public String getText() {
+	    	return text;
+	    }
+	}	
+
+	/**
+	 * Notif message item
+	 */
+	private class NotifMessageItem extends MessageItem {
+	    private String text;
+	    
+	    public NotifMessageItem(String text) {
+	    	super(ChatLog.Message.Direction.IRRELEVANT, null);
+	    	
+	    	this.text = text;
+	    }
+	    
+	    public String getText() {
+	    	return text;
+	    }
+	}	
+
+	/**
+	 * Message list adapter
+	 */
+	public class MessageListAdapter extends ArrayAdapter<MessageItem> {
+	    private Context context; 
+
+	    public MessageListAdapter(Context context) {
+	        super(context, R.layout.chat_view_item);
+	        
+	        this.context = context;
+	    }
+	    
+	    @Override
+	    public View getView(int position, View convertView, ViewGroup parent) {
+	        View row = convertView;
+	        MessageItemHolder holder = null;
+	        if (row == null) {
+	            LayoutInflater inflater = LayoutInflater.from(context);
+	            row = inflater.inflate(R.layout.chat_view_item, parent, false);
+	            holder = new MessageItemHolder();
+	            holder.text = (TextView)row.findViewById(R.id.item_text);
+	            row.setTag(holder);
+	        } else {
+	            holder = (MessageItemHolder)row.getTag();
+	        }
+	        
+        	MessageItem item = (MessageItem)getItem(position);
+        	String line;
+        	if (item.getDirection() == ChatLog.Message.Direction.OUTGOING) {
+        		line = "[" + getString(R.string.label_me) + "] ";
+        	} else {
+        		line = "[" + item.getContact() + "] ";
+        	}
+        	if (item instanceof NotifMessageItem) {
+        		NotifMessageItem notifItem = (NotifMessageItem)item;
+				holder.text.setText(notifItem.getText());
+        	} else {
+        		TextMessageItem txtItem = (TextMessageItem)item;
+				String txt = txtItem.getText();
+				line += txt;
+				
+				holder.text.setText(line);
+        	}
+
+	        return row;
+	    }
+	    
+	    private class MessageItemHolder {
+	        TextView text;
+	    }
+	}
+	
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_BACK:
+            	// Quit the session
+            	quitSession();
+                return true;
+        }
+
+        return super.onKeyDown(keyCode, event);
+    }
+    
+    /**
+     * Send message
+     * 
+     * @param msg Message
+     * @return Message ID
+     */
+    protected abstract String sendMessage(String msg);
+    
+    /**
+     * Quit the session
+     */
+    protected abstract void quitSession();
+    
+    /**
+     * Update the is composing status
+     * 
+     * @param isTyping Is compoing status
+     */
+    protected abstract void setTypingStatus(boolean isTyping);
 }

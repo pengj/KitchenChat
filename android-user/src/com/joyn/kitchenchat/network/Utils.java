@@ -19,8 +19,12 @@
 package com.joyn.kitchenchat.network;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.text.DateFormat;
 import java.util.Date;
-import java.util.List;
+import java.util.Enumeration;
+import java.util.Set;
 import java.util.Vector;
 
 import com.joyn.kitchenchat.R;
@@ -32,120 +36,217 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
-import android.util.Log;
 import android.widget.Toast;
 
-import com.orangelabs.rcs.service.api.client.contacts.ContactsApi;
-import com.orangelabs.rcs.utils.PhoneUtils;
 
 /**
  * Utility functions
  * 
- * @author jexa7410
+ * @author Jean-Marc AUFFRET
  */
 public class Utils {
 	/**
-	 * Notification ID for terms
+	 * Notification ID for single chat
 	 */
-	public static int NOTIF_ID_TERMS = 999; 
-
+	public static int NOTIF_ID_SINGLE_CHAT = 1000; 
+	
 	/**
 	 * Notification ID for chat
 	 */
-	public static int NOTIF_ID_CHAT = 1000; 
-	
+	public static int NOTIF_ID_GROUP_CHAT = 1001; 
+
 	/**
 	 * Notification ID for file transfer
 	 */
-	public static int NOTIF_ID_FT = 1001; 
+	public static int NOTIF_ID_FT = 1002; 
 
 	/**
 	 * Notification ID for image share
 	 */
-	public static int NOTIF_ID_IMAGE_SHARE = 1002; 
+	public static int NOTIF_ID_IMAGE_SHARE = 1003; 
 
 	/**
 	 * Notification ID for video share
 	 */
-	public static int NOTIF_ID_VIDEO_SHARE = 1003; 
+	public static int NOTIF_ID_VIDEO_SHARE = 1004; 
 
 	/**
-	 * Notification ID for location share
+	 * Notification ID for MM session
 	 */
-	public static int NOTIF_ID_LOCATION_SHARE = 1004; 
+	public static int NOTIF_ID_MM_SESSION = 1005; 
 	
 	/**
-	 * RCS-e extension feature tag prefix
+	 * Returns the application version from manifest file 
+	 * 
+	 * @param ctx Context
+	 * @return Application version or null if not found
 	 */
-	public final static String FEATURE_RCSE_EXTENSION = "urn%3Aurn-7%3A3gpp-application.ims.iari.rcse";
-
+	public static String getApplicationVersion(Context ctx) {
+		String version = null;
+		try {
+			PackageInfo info = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
+			version = info.versionName;
+		} catch(NameNotFoundException e) {
+		}
+		return version;
+	}
 	
-	public static Contact getContactFromPhoneNumber(Context context, String phoneNumber) {
-		Cursor contacts = context.getContentResolver().query(Phone.CONTENT_URI, null, null, null, null);
-		if (contacts.moveToFirst()) {
+	/**
+	 * Create a contact selector based on the native address book
+	 * 
+	 * @param activity Activity
+	 * @return List adapter
+	 */
+	public static ContactListAdapter createContactListAdapter(Activity activity) {
+	    String[] PROJECTION = new String[] {
+	    		Phone._ID,
+	    		Phone.NUMBER,
+	    		Phone.LABEL,
+	    		Phone.TYPE,
+	    		Phone.CONTACT_ID
+		    };
+        ContentResolver content = activity.getContentResolver();
+		Cursor cursor = content.query(Phone.CONTENT_URI, PROJECTION, Phone.NUMBER + "!='null'", null, null);
 
-			while (!contacts.isAfterLast()) {
-				String formattedPhoneNumber = contacts.getString(contacts.getColumnIndex(Phone.NUMBER));
-				formattedPhoneNumber.replace("+", "00").replaceAll(" ", "");
-				if (phoneNumber.equals(formattedPhoneNumber)) {
-					Contact contact = new Contact();
-					contact.setId(contacts.getString(contacts.getColumnIndex(Phone.CONTACT_ID)));
-					contact.setName(contacts.getString(contacts.getColumnIndex(Phone.DISPLAY_NAME)));
-					contact.setPhoneNumber(formattedPhoneNumber);
-					Log.d("utils", contact.getId() + " " + contact.getName() + " " + contact.getPhoneNumber());
-					contacts.close();
-					return contact;
-				}
-				contacts.moveToNext();
+		// List of unique number
+		Vector<String> treatedNumbers = new Vector<String>();
+		
+		MatrixCursor matrix = new MatrixCursor(PROJECTION);
+		while (cursor.moveToNext()){
+			// Key is phone number
+			String phoneNumber = cursor.getString(1);
+
+			// Filter
+			if (!treatedNumbers.contains(phoneNumber)){
+				matrix.addRow(new Object[]{cursor.getLong(0), 
+						phoneNumber,
+						cursor.getString(2),
+						cursor.getInt(3),
+						cursor.getLong(4)});
+				treatedNumbers.add(phoneNumber);
 			}
 		}
-
-		contacts.close();
-		return null;
+		cursor.close();
+		
+		return new ContactListAdapter(activity, matrix);
 	}
-	
-	
 	
 	/**
-	 * Format caller id
+	 * Create a contact selector with RCS capable contacts
 	 * 
-	 * @param intent Intent invitation
-	 * @return Id
+	 * @param activity Activity
+	 * @return List adapter
 	 */
-	public static String formatCallerId(Intent invitation) {
-		String number = invitation.getStringExtra("contact");
-		String displayName = invitation.getStringExtra("contactDisplayname"); 
-		if ((displayName != null) && (displayName.length() > 0)) { 
-			return displayName + " (" + number + ")";
-		} else {
-			return number;
+	public static ContactListAdapter createRcsContactListAdapter(Activity activity) {
+	    String[] PROJECTION = new String[] {
+	    		Phone._ID,
+	    		Phone.NUMBER,
+	    		Phone.LABEL,
+	    		Phone.TYPE,
+	    		Phone.CONTACT_ID
+		    };
+		MatrixCursor matrix = new MatrixCursor(PROJECTION);
+	    
+	    // Get the list of RCS contacts 
+	    // TODO List<String> rcsContacts = contactsApi.getRcsContacts();
+	    ContentResolver content = activity.getContentResolver();
+	    
+		// Query all phone numbers
+        Cursor cursor = content.query(Phone.CONTENT_URI, 
+        		PROJECTION, 
+        		null, 
+        		null, 
+        		null);
+
+		// List of unique number
+		Vector<String> treatedNumbers = new Vector<String>();
+		while (cursor.moveToNext()){
+			// Keep a trace of already treated row
+			String phoneNumber = cursor.getString(1);
+
+			// If this number is RCS and not already in the list, take it 
+// TODO			if (rcsContacts.contains(phoneNumber) && !treatedNumbers.contains(phoneNumber)){
+				matrix.addRow(new Object[]{cursor.getLong(0), 
+						phoneNumber,
+						cursor.getString(2),
+						cursor.getInt(3),
+						cursor.getLong(4)});
+				treatedNumbers.add(phoneNumber);
+//			}
 		}
+		cursor.close();
+		
+		return new ContactListAdapter(activity, matrix);
 	}
-	
-	
+
+	/**
+	 * Create a multi contacts selector with RCS capable contacts
+	 * 
+	 * @param activity Activity
+	 * @return List adapter
+	 */
+	public static MultiContactListAdapter createMultiContactImCapableListAdapter(Activity activity) {
+	    String[] PROJECTION = new String[] {
+	    		Phone._ID,
+	    		Phone.NUMBER,
+	    		Phone.LABEL,
+	    		Phone.TYPE,
+	    		Phone.CONTACT_ID
+		    };
+
+		MatrixCursor matrix = new MatrixCursor(PROJECTION);
+
+	    // Get the list of RCS contacts 
+	    // List<String> rcsContacts = contactsApi.getRcsContacts();
+	    ContentResolver content = activity.getContentResolver();
+
+	    // Query all phone numbers
+        Cursor cursor = content.query(Phone.CONTENT_URI, PROJECTION, null, null, null);
+
+		// List of unique number
+		Vector<String> treatedNumbers = new Vector<String>();
+		while (cursor.moveToNext()){
+			// Keep a trace of already treated row
+			String phoneNumber = cursor.getString(1);
+			
+			// If this number is RCS and not already in the list, take it 
+// TODO			if (rcsContacts.contains(phoneNumber) && !treatedNumbers.contains(phoneNumber)){
+				matrix.addRow(new Object[]{cursor.getLong(0), 
+						phoneNumber,
+						cursor.getString(2),
+						cursor.getInt(3),
+						cursor.getLong(4)});
+				treatedNumbers.add(phoneNumber);
+//			}
+		}
+		cursor.close();
+		return new MultiContactListAdapter(activity, matrix);
+	}
 	
 	/**
 	 * Display a toast
 	 * 
-	 * @param activity Activity
+	 * @param ctx Context
 	 * @param message Message to be displayed
 	 */
-    public static void displayToast(Activity activity, String message) {
-        Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
+    public static void displayToast(Context ctx, String message) {
+        Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show();
     }
 
 	/**
 	 * Display a long toast
 	 * 
-	 * @param activity Activity
+	 * @param ctx Context
 	 * @param message Message to be displayed
 	 */
-    public static void displayLongToast(Activity activity, String message) {
-        Toast.makeText(activity, message, Toast.LENGTH_LONG).show();
+    public static void displayLongToast(Context ctx, String message) {
+        Toast.makeText(ctx, message, Toast.LENGTH_LONG).show();
     }
     
     /**
@@ -191,7 +292,7 @@ public class Utils {
 		return alert;
     }
 
-	/**
+    /**
 	 * Show a message with a specific title
 	 * 
 	 * @param activity Activity
@@ -235,18 +336,19 @@ public class Utils {
 	 * 
 	 * @param activity Activity
 	 * @param title Title of the dialog
-	 * @param items Items
+	 * @param items List of items
 	 */
-    public static void showList(Activity activity, String title, CharSequence[] items) {
+    public static void showList(Activity activity, String title, Set<String> items) {
         if (activity.isFinishing()) {
         	return;
         }
-
+        
+        CharSequence[] chars = items.toArray(new CharSequence[items.size()]);
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
     	builder.setTitle(title);
     	builder.setCancelable(false);
     	builder.setPositiveButton(activity.getString(R.string.label_ok), null);
-        builder.setItems(items, null);
+        builder.setItems(chars, null);
         AlertDialog alert = builder.create();
     	alert.show();
     }
@@ -277,9 +379,43 @@ public class Utils {
     public static String formatDateToString(long d) {
     	if (d > 0L) {
 	    	Date df = new Date(d);
-	    	return df.toLocaleString();
+	    	return DateFormat.getDateInstance().format(df);
     	} else {
     		return "";
     	}
     }
+    
+	/**
+	 * Construct an NTP time from a date in milliseconds
+	 *
+	 * @param date Date in milliseconds
+	 * @return NTP time in string format
+	 */
+	public static String constructNTPtime(long date) {
+		long ntpTime = 2208988800L;
+		long startTime = (date / 1000) + ntpTime;
+		return String.valueOf(startTime);
+	}
+
+	/**
+	 * Returns the local IP address
+	 *
+	 * @return IP address
+	 */
+	public static String getLocalIpAddress() {
+		try {
+	        for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+	            NetworkInterface intf = (NetworkInterface)en.nextElement();
+	            for (Enumeration<InetAddress> addr = intf.getInetAddresses(); addr.hasMoreElements();) {
+	                InetAddress inetAddress = (InetAddress)addr.nextElement();
+                    if (!inetAddress.isLoopbackAddress() && !inetAddress.isLinkLocalAddress()) {
+                        return inetAddress.getHostAddress().toString();
+                    }
+	            }
+	        }
+	        return null;
+		} catch(Exception e) {
+			return null;
+		}
+	}
 }
