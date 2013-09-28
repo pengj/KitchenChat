@@ -4,6 +4,7 @@ import com.joyn.kitchenchat.com.Consts;
 import com.joyn.kitchenchat.network.Contact;
 
 import com.joyn.kitchenchat.R;
+
 import android.os.Bundle;
 import android.app.Activity;
 import android.content.Intent;
@@ -27,16 +28,37 @@ public class MainActivity extends Activity {
 	
 	
 	public void onStartChat(View v){
-		Contact friend = new Contact();
-		friend.setName("Kitchen");
-		friend.setPhoneNumber(Consts.KITCHEM_PHONE);
-		Contact me = new Contact();
-		me.setName("Me");
-		me.setPhoneNumber(Consts.MY_PHONE);
-		Intent i = new Intent(this, ChatView.class);
-		i.putExtra("friend", friend);
-		i.putExtra("me", me);
-		startActivity(i);	
+		
+		if(Consts.KITCHEN)
+		{
+			Contact friend = new Contact();
+			friend.setName("User");
+			friend.setPhoneNumber(Consts.MY_PHONE);
+			Contact me = new Contact();
+			me.setName("Kitchen");
+			me.setPhoneNumber(Consts.KITCHEM_PHONE);
+			Intent intent = new Intent(this, SingleChatView.class);
+			intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+	    	intent.putExtra(SingleChatView.EXTRA_MODE, SingleChatView.MODE_OUTGOING);
+	    	intent.putExtra(SingleChatView.EXTRA_CONTACT, friend.getPhoneNumber());
+			startActivity(intent);	
+		}else{
+			
+			Contact friend = new Contact();
+			friend.setName("Kitchen");
+			friend.setPhoneNumber(Consts.KITCHEM_PHONE);
+			Contact me = new Contact();
+			me.setName("Me");
+			me.setPhoneNumber(Consts.MY_PHONE);
+			Intent intent = new Intent(this, SingleChatView.class);
+			intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+	    	intent.putExtra(SingleChatView.EXTRA_MODE, SingleChatView.MODE_OUTGOING);
+	    	intent.putExtra(SingleChatView.EXTRA_CONTACT, friend.getPhoneNumber());
+			startActivity(intent);	
+			
+		}
+		
+		
 	}
 
 }

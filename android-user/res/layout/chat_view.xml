@@ -1,85 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical"
-    android:padding="1dp"
-    android:id="@+id/chatView"
-    android:background="#d4d7d9">
+    android:orientation="vertical" 
+    android:animateLayoutChanges="true"
+     android:background="@drawable/chat_background">
 
-    <ScrollView
-        android:id="@+id/scrollView"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_marginBottom="10dp"
-        android:layout_marginTop="20dp"
-        android:layout_below="@+id/chatview_titlebar"
-        android:layout_above="@+id/messageBox"
-        >
+    <RelativeLayout android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+         
+          <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="220dp"
+        android:orientation="vertical"
+         android:layout_alignParentBottom="true"
+        android:visibility="gone"
+        android:id="@+id/chatbox" >
 
-        <LinearLayout
-            android:id="@+id/messageContainer"
-            android:layout_width="match_parent"
+        <ListView
+            android:id="@android:id/list"
+            android:layout_width="fill_parent"
+            android:layout_height="0dip"
+            android:layout_weight="1"
+            android:stackFromBottom="true"
+            android:transcriptMode="normal" 
+            android:background="@color/white"/>
+        
+          <ImageButton
+               android:id="@+id/button_talk"           
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:layout_alignParentBottom="true"
+               android:layout_alignParentLeft="true"
+               android:background="@drawable/button_talk" 
+               android:onClick="onTalkChat"/>
+
+        <ScrollView
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" >
-        </LinearLayout>
-    </ScrollView>
-    
-	<EditText
-	    android:id="@+id/messageBox"
-	    android:layout_width="match_parent"
-	    android:layout_height="wrap_content"
-	    android:layout_alignParentBottom="true"
-	    android:layout_alignParentLeft="true"
-	    android:layout_toLeftOf="@+id/sendButton"
-	    android:hint="@string/message_text_hint"
-	    android:inputType="text"
-	    />
-	
-	<Button
-	    android:id="@+id/sendButton"
-	    android:layout_width="wrap_content"
-	    android:layout_height="wrap_content"
-	    android:text="@string/button_send"
-	    android:layout_alignParentBottom="true"
-	    android:layout_alignParentRight="true"
-	    />
+             android:id="@+id/layout_text" >
 
-	<LinearLayout 
-	    android:id="@+id/chatview_titlebar"
-	    android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
-        android:background="@color/black"
-        android:orientation="horizontal">
-      <ImageButton
-        android:id="@+id/chatview_back"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@drawable/navigation_previous_item"
-        android:onClick="onBackAction" />
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:orientation="vertical" >
 
-	<TextView
-	    android:id="@+id/chatview_title"
-	    android:layout_width="wrap_content"
-	    android:layout_height="wrap_content"
-	    android:layout_gravity="center_vertical"
-	    android:background="@color/black"
-	    android:text="The friend name"
-	    android:textColor="@color/white"
-	    android:textSize="18sp" />
+                <TextView
+                    android:id="@+id/isComposingText"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone" />
 
+                <RelativeLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:paddingLeft="5dp"
+                    android:paddingTop="5dp" >
+
+                    <Button
+                        android:id="@+id/send_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="50dp"
+                        android:layout_alignParentRight="true"
+                        android:text="Send"
+                        android:onClick="onSendAction" />
+
+                    <EditText
+                        android:id="@+id/userText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignBottom="@+id/send_button"
+                        android:layout_alignParentLeft="true"
+                        android:layout_alignTop="@+id/send_button"
+                        android:layout_toLeftOf="@+id/send_button"
+                        android:layout_toRightOf="@+id/send_button"
+                        android:textSize="14sp" />
+                </RelativeLayout>
+            </LinearLayout>
+        </ScrollView>
     </LinearLayout>
 
-    <ImageView
-        android:id="@+id/chatview_friends"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginRight="3dp"
-        android:layout_marginTop="3dp"
-        android:src="@drawable/ic_contact1" />
+           <ImageButton
+               android:id="@+id/button_chat"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:layout_alignParentBottom="true"
+               android:layout_alignParentLeft="true"
+               android:background="@drawable/ask_chef" 
+               android:onClick="onStartChat"/>
 
-</RelativeLayout>
+           <ImageButton
+               android:id="@+id/button_order"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:layout_alignParentRight="true"
+               android:layout_alignParentTop="true"
+               android:layout_marginTop="111dp"
+               android:background="@drawable/order"
+               android:onClick="onOrderClick" />
+
+    </RelativeLayout>
+   
+
+
+   
+    
+
+</LinearLayout>
