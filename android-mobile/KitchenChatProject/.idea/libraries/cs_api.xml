@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="cs_api">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/KitchenChat/libs/cs_api.jar!/" />
+      <root url="jar://$PROJECT_DIR$/KitchenChat/libs/cs_api.jar!/" />
+      <root url="jar://$PROJECT_DIR$/KitchenChat/libs/cs_api.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
