@@ -18,6 +18,8 @@
 
 package com.joyn.kitchenchat.ui;
 
+import java.util.Locale;
+
 import org.gsma.joyn.JoynServiceListener;
 import org.gsma.joyn.chat.ChatLog;
 import org.gsma.joyn.chat.ChatMessage;
@@ -28,6 +30,7 @@ import com.joyn.kitchenchat.R;
 import com.joyn.kitchenchat.network.Utils;
 
 import android.app.AlertDialog;
+import android.speech.tts.TextToSpeech;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.content.Context;
@@ -40,6 +43,7 @@ import android.text.Editable;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -49,6 +53,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 
@@ -56,8 +61,12 @@ import android.widget.TextView;
 /**
  * Chat view
  */
-public abstract class ChatView extends ListActivity implements OnClickListener, OnKeyListener, JoynServiceListener {	
-    /**
+public abstract class ChatView extends ListActivity implements OnClickListener, OnKeyListener, JoynServiceListener, TextToSpeech.OnInitListener {	
+    
+	private static final String TAG = "ChatView";
+	
+	
+	/**
      * UI handler
      */
 	protected Handler handler = new Handler();
@@ -82,6 +91,14 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
      */
     protected Button sendBtn;
     
+    
+    /**
+     * Linear layout for the dish 
+     * ***/
+    protected LinearLayout Chat_layout, Dish_layout;
+    
+    protected boolean Chat_on=false;
+    
     /**
      * Message list adapter
      */
@@ -96,7 +113,13 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
      * Utility class to manage the is-composing status
      */
     protected IsComposingManager composingManager = null;
-	
+    
+    
+    
+    /**
+     * TextToSpeech
+     * **/
+    private TextToSpeech tts;
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,7 +142,12 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
                 
 		// Set send button listener
         sendBtn = (Button)findViewById(R.id.send_button);
-        sendBtn.setOnClickListener(this);
+        
+        
+        // the layout for the chat
+        Chat_layout = (LinearLayout)findViewById(R.id.chatbox);
+        Dish_layout = (LinearLayout)findViewById(R.id.dishbox);
+        
                
         // Instanciate API
         chatApi = new ChatService(getApplicationContext(), this);
@@ -128,15 +156,54 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
         // Connect API
         chatApi.connect();
         contactsApi.connect();
+        
+        
+        tts = new TextToSpeech(this, this);
     }
 
     @Override
     public void onDestroy() {
-    	super.onDestroy();
-
-        // Disconnect API
+    	
+    	
+    	 // Disconnect API
         chatApi.disconnect();
         contactsApi.disconnect();
+    	
+    	// Don't forget to shutdown tts!
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+        }
+    	
+    	super.onDestroy();
+
+       
+    }
+    
+    
+    @Override
+    public void onInit(int status) {
+ 
+        if (status == TextToSpeech.SUCCESS) {
+ 
+            int result = tts.setLanguage(Locale.FRENCH);
+ 
+            if (result == TextToSpeech.LANG_MISSING_DATA
+                    || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "This Language is not supported");
+            } 
+ 
+        } else {
+            Log.e("TTS", "Initilization Failed!");
+        }
+ 
+    }
+    
+    
+    private void SpeakOut(String text){
+    	
+    	tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+    	
     }
     
     /**
@@ -146,8 +213,54 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
      */
     public void onClick(View v) {
         sendText();
+        
     }
-
+    
+    
+    
+    /**
+     * The send button action, same as above code
+     * 
+     * **/
+    public void onSendAction(View v){
+    	sendText();
+    	
+    }
+    
+    
+    /**
+     * The ask button action
+     * 
+     * **/
+    public void onAskAction(View v){
+    	
+    	Dish_layout.setVisibility(View.GONE);
+    	Chat_layout.setVisibility(View.VISIBLE);
+    	
+    	Chat_on =true;
+    	
+    }
+    
+    /**
+     * The reverse back button action
+     * 
+     * **/
+    
+    private void onBackAction(){
+    	
+    	if(Chat_on){
+    		Dish_layout.setVisibility(View.VISIBLE);
+        	Chat_layout.setVisibility(View.GONE);
+    	}else{
+    		// Quit the session
+        	quitSession();
+        	
+    		finish();
+    	}
+    	
+    }
+    
+    
     /**
      * Message composer listener
      * 
@@ -164,7 +277,16 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
                     return true;
             }
         }
-        return false;
+        
+        
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+
+        	Log.d(TAG, "onback pressed");
+        	onBackAction();
+        	return true;
+        }
+
+        return super.onKeyDown(keyCode, event);
     }
     
 	/**
@@ -208,6 +330,8 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
         	return;
         }
         
+        SpeakOut(text);
+        
         // Check if the service is available
     	boolean registered = false;
     	try {
@@ -231,6 +355,11 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
     	}
     }
     
+    
+    private void ParseText(){
+    	
+    }
+    
 	/**
 	 * Display received message
 	 * 
@@ -239,6 +368,11 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
     protected void displayReceivedMessage(ChatMessage msg) {
 		String contact = msg.getContact();
 		String txt = msg.getMessage();
+		
+		SpeakOut(txt);
+		
+		// Quit the session
+    	quitSession();
         addMessageHistory(ChatLog.Message.Direction.INCOMING, contact, txt);
     }
 
@@ -492,17 +626,7 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 	    }
 	}
 	
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_BACK:
-            	// Quit the session
-            	quitSession();
-                return true;
-        }
 
-        return super.onKeyDown(keyCode, event);
-    }
     
     /**
      * Send message
