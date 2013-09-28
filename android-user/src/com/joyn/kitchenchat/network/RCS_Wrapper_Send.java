@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import om.joyn.kitchenchat.R;
+import com.joyn.kitchenchat.R;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -23,13 +23,13 @@ import android.widget.Toast;
 
 
 
+import com.joyn.kitchenchat.com.Consts;
 import com.joyn.kitchenchat.ui.ChatView;
 import com.orangelabs.rcs.core.ims.service.im.chat.ChatError;
 import com.orangelabs.rcs.core.ims.service.im.chat.imdn.ImdnDocument;
 import com.orangelabs.rcs.provider.settings.RcsSettings;
 import com.orangelabs.rcs.service.api.client.ClientApiListener;
 import com.orangelabs.rcs.service.api.client.ImsEventListener;
-import com.orangelabs.rcs.service.api.client.contacts.ContactsApi;
 import com.orangelabs.rcs.service.api.client.eventslog.EventsLogApi;
 import com.orangelabs.rcs.service.api.client.messaging.GeolocMessage;
 import com.orangelabs.rcs.service.api.client.messaging.IChatEventListener;
@@ -125,6 +125,8 @@ public class RCS_Wrapper_Send implements ClientApiListener, ImsEventListener{
         messagingApi.addImsEventListener(this);
         messagingApi.connectApi();
         
+        Log.d(TAG, "setup the message API");
+        
         // Instanciate contacts API
         //contactsApi = new ContactsApi(getApplicationContext());
 		
@@ -172,6 +174,10 @@ public class RCS_Wrapper_Send implements ClientApiListener, ImsEventListener{
 	        Thread thread = new Thread() {
 	        	public void run() {
 	            	try {
+	            		
+	            		Contact friend = mActivity.getIntent().getExtras().getParcelable("friend");
+	    	        	participants.add(Consts.KITCHEM_PHONE);
+	            		
             			chatSession = messagingApi.initiateOne2OneChatSession(participants.get(0), msg);
 	            		chatSession.addSessionListener(chatSessionListener);
 	            	} catch(Exception e) {
@@ -202,16 +208,7 @@ public class RCS_Wrapper_Send implements ClientApiListener, ImsEventListener{
     	        // Warn the composing manager that the message was sent
     			composingManager.messageWasSent();
     			
-    			//store the msg
-    			//switch to the chatview
-    		/*	com.orange.labs.hackizard.common.Message db_msg = new com.orange.labs.hackizard.common.Message();
-    			db_msg.setOut(true);
-    			db_msg.setMessage(msg);
-    			db_msg.setContact(participants.get(0));
-    			Date now = new Date();
-    			db_msg.setTimestamp(now.getTime());
     			
-    			msgDB.add(db_msg);*/
     	    } catch(Exception e) {
     	    	Utils.showMessage(mActivity, mActivity.getString(R.string.label_send_im_failed));
     	    }
@@ -374,12 +371,12 @@ public class RCS_Wrapper_Send implements ClientApiListener, ImsEventListener{
     		}
     	}
 
-		@Override
 		public void handleFileDeliveryStatus(String arg0, String arg1)
 				throws RemoteException {
 			// TODO Auto-generated method stub
 			
 		}
+
     };
     
     

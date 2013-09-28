@@ -23,18 +23,20 @@ import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
-import om.joyn.kitchenchat.R;
+import com.joyn.kitchenchat.R;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.provider.ContactsContract.CommonDataKinds.Phone;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.orangelabs.rcs.service.api.client.contacts.ContactsApi;
@@ -81,6 +83,33 @@ public class Utils {
 	 */
 	public final static String FEATURE_RCSE_EXTENSION = "urn%3Aurn-7%3A3gpp-application.ims.iari.rcse";
 
+	
+	public static Contact getContactFromPhoneNumber(Context context, String phoneNumber) {
+		Cursor contacts = context.getContentResolver().query(Phone.CONTENT_URI, null, null, null, null);
+		if (contacts.moveToFirst()) {
+
+			while (!contacts.isAfterLast()) {
+				String formattedPhoneNumber = contacts.getString(contacts.getColumnIndex(Phone.NUMBER));
+				formattedPhoneNumber.replace("+", "00").replaceAll(" ", "");
+				if (phoneNumber.equals(formattedPhoneNumber)) {
+					Contact contact = new Contact();
+					contact.setId(contacts.getString(contacts.getColumnIndex(Phone.CONTACT_ID)));
+					contact.setName(contacts.getString(contacts.getColumnIndex(Phone.DISPLAY_NAME)));
+					contact.setPhoneNumber(formattedPhoneNumber);
+					Log.d("utils", contact.getId() + " " + contact.getName() + " " + contact.getPhoneNumber());
+					contacts.close();
+					return contact;
+				}
+				contacts.moveToNext();
+			}
+		}
+
+		contacts.close();
+		return null;
+	}
+	
+	
+	
 	/**
 	 * Format caller id
 	 * 

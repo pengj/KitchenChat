@@ -17,7 +17,7 @@ package com.joyn.kitchenchat.ui;
  * limitations under the License.
  ******************************************************************************/
 
-import om.joyn.kitchenchat.R;
+import com.joyn.kitchenchat.R;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Notification;
