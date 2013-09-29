@@ -18,12 +18,6 @@
 
 package com.joyn.kitchenchat.ui;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -37,13 +31,11 @@ import com.joyn.kitchenchat.R;
 import com.joyn.kitchenchat.com.Consts;
 import com.joyn.kitchenchat.network.Utils;
 
-import android.app.AlertDialog;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.AsyncTask;
@@ -51,8 +43,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.text.Editable;
-import android.text.SpannableStringBuilder;
-import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -71,7 +61,6 @@ import android.widget.TextView;
 
 import com.memetix.mst.language.Language;
 import com.memetix.mst.translate.Translate;
-
 
 /**
  * Chat view
@@ -167,6 +156,8 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 		// Set layout
 		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		setContentView(R.layout.chat_view);
+
+		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
 		// Set the message list adapter
 		msgListAdapter = new MessageListAdapter(this);
