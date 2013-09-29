@@ -22,7 +22,7 @@
             android:layout_marginBottom="5dp"
             android:gravity="center"
             android:src="@drawable/login_bg"
-            android:visibility="invisible"
+            android:alpha="0.0"
             />
         
         	<LinearLayout
@@ -38,7 +38,7 @@
         		    android:layout_marginRight="5dp"
         		    android:src="@drawable/signup_bg"
         		    android:contentDescription="@string/image_content_description"
-        		    android:visibility="invisible"
+        		    android:alpha="0.0"
             		/>
         		<ImageView 
         		    android:id="@+id/facebook"
@@ -47,7 +47,7 @@
         		    android:layout_marginRight="5dp"
         		    android:src="@drawable/facebook_logo"
         		 	android:contentDescription="@string/image_content_description"
-        		    android:visibility="invisible"
+        		 	android:alpha="0.0"
             		/>
         		<ImageView 
         		    android:id="@+id/twitter"
@@ -55,9 +55,8 @@
         		    android:layout_height="wrap_content"
         		    android:src="@drawable/twitter_logo"
         		    android:contentDescription="@string/image_content_description"
-        		    android:visibility="invisible"
+            		android:alpha="0.0"
             		/>
-        			</LinearLayout>
+        	</LinearLayout>
         </LinearLayout>
-
 </RelativeLayout>
