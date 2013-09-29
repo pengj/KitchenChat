@@ -347,7 +347,7 @@ public class SingleChatView extends ChatView {
 			handler.post(new Runnable(){
 				public void run(){
 					// Display a notification
-					addNotifHistory(getString(R.string.label_receive_delivery_status_delivered));
+					//addNotifHistory(getString(R.string.label_receive_delivery_status_delivered));
 				}
 			});
     	}
@@ -357,7 +357,7 @@ public class SingleChatView extends ChatView {
 			handler.post(new Runnable(){
 				public void run(){
 					// Display a notification
-					addNotifHistory(getString(R.string.label_receive_delivery_status_displayed));
+					//addNotifHistory(getString(R.string.label_receive_delivery_status_displayed));
 				}
 			});
     	}

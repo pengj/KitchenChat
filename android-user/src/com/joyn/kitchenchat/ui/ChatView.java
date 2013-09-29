@@ -247,7 +247,7 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 
 			//int result = tts.setLanguage(Locale.getDefault());
 
-			int result = tts.setLanguage(Locale.ITALIAN);
+			int result = tts.setLanguage(Locale.FRANCE);
 			//setTtsLanguage(tts, Locale.ITALIAN);
 
 
@@ -294,7 +294,6 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 			Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 			intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
 					RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-			intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "f");
 			intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "AndroidBite Voice Recognition...");
 			startActivityForResult(intent, REQUEST_CODE);
 		}else{
@@ -308,7 +307,6 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 		Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 		intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
 				RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-		intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "f");
 		intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "AndroidBite Voice Recognition...");
 		startActivityForResult(intent, REQUEST_CODE);
 		
@@ -567,6 +565,7 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 			kitchen_finished=true;
 			startChatBtn.setVisibility(View.VISIBLE);
 			startChatBtn.setBackground(getResources().getDrawable(R.drawable.thank_chef));
+			
 			return null;
 		}
 		
@@ -593,7 +592,9 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 
 		if(after_process!=null)
 		{
-			SpeakOut(after_process);
+			//only speek for the chief
+			if(Consts.KITCHEN)
+				SpeakOut(after_process);
 
 			// Quit the session
 			//quitSession();
