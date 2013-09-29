@@ -46,6 +46,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -68,6 +69,8 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import com.memetix.mst.language.Language;
+import com.memetix.mst.translate.Translate;
 
 
 /**
@@ -275,10 +278,148 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 
 	private void SpeakOut(String text){
 
-		if((text!=null)&&(text.length()>2))
+		if((text!=null)&&(text.length()>0))
 			tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
 
 	}
+	
+	
+	
+class reStuff extends AsyncTask<Void, Void, Void>{
+        
+        String translatedText = "";
+        String pre_text="";
+        String contact = "";
+        
+        
+        public reStuff(String text, String c)
+        {
+        	pre_text=text;
+        	contact = c;
+        	
+        }
+        
+        @Override
+        protected Void doInBackground(Void... params) {
+            // TODO Auto-generated method stub
+            try {
+                
+                if(pre_text.contains("Put-Order")||pre_text.contains("Put-Cook")||pre_text.contains("Put-Finish"))
+                {
+                	translatedText = pre_text;
+                }else{
+                	translatedText = Translate(pre_text);
+                }
+                
+                
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+                translatedText = e.toString();
+            }
+             
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+        
+        	//only speek for the chief
+			if(Consts.KITCHEN)
+				SpeakOut(translatedText);
+
+			// Quit the session
+			
+			
+			
+			addMessageHistory(ChatLog.Message.Direction.INCOMING, contact, translatedText);
+    		
+        }
+         
+    }
+	
+	
+	class bgStuff extends AsyncTask<Void, Void, Void>{
+        
+        String translatedText = "";
+        @Override
+        protected Void doInBackground(Void... params) {
+            // TODO Auto-generated method stub
+            try {
+                String text = composeText.getText().toString();
+                
+                if(text.contains("Put-Order")||text.contains("Put-Cook")||text.contains("Put-Finish"))
+                {
+                	translatedText = text;
+                }else{
+                	translatedText = Translate(text);
+                }
+                
+                
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+                translatedText = e.toString();
+            }
+             
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+        	Log.d(TAG, "Send Text:"+translatedText);
+    		
+    		// Check if the service is available
+    		boolean registered = false;
+    		try {
+    			if ((chatApi != null) && chatApi.isServiceRegistered()) {
+    				registered = true;
+    			}
+    		} catch(Exception e) {}
+    		if (!registered) {
+    			Utils.showMessage(ChatView.this, getString(R.string.label_service_not_available));
+    			return;
+    		}
+
+    		// Send text message
+    		String msgId = sendMessage(translatedText);
+    		if (msgId != null) {
+    			// Add text to the message history
+    			addMessageHistory(ChatLog.Message.Direction.OUTGOING, getString(R.string.label_me), translatedText);
+    			composeText.setText(null);
+    		} else {
+    			Utils.showMessage(ChatView.this, getString(R.string.label_send_im_failed));
+    		}
+        }
+         
+    }
+	
+	
+	private String Translate(String text){
+		
+		   Translate.setClientId("JoynKitchenTest");
+	       Translate.setClientSecret("R3PJJGUubanOcm8Ifl6fHZ2OS2L48Ymm6fqAb9/TLA4=");
+	        
+	       String translatedText = text;
+	        
+	       // English AUTO_DETECT -> France Change this if u wanna other languages
+	       try {
+	    	if(Consts.KITCHEN)
+	    	{
+	    		translatedText = Translate.execute(text,Language.FRENCH);
+	    	}else{
+	    		translatedText = Translate.execute(text,Language.ENGLISH);
+	    	}
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	       return translatedText;
+		
+		
+	}
+	
 
 	/**
 	 * Message composer listener
@@ -316,7 +457,11 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 		Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 		intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
 				RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-		intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "AndroidBite Voice Recognition...");
+		
+		intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fr");
+		intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "fr"); 
+		
+		intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Android Voice Recognition...");
 		startActivityForResult(intent, REQUEST_CODE);
 		
 	}
@@ -351,6 +496,7 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 			composeText.setText(matches.get(0));
 
 			sendText();
+			
 
 		}
 		super.onActivityResult(requestCode, resultCode, data);
@@ -451,31 +597,7 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 			return;
 		}
 
-		Log.d(TAG, "Send Text:"+text);
-
-		//SpeakOut(text);
-		
-		// Check if the service is available
-		boolean registered = false;
-		try {
-			if ((chatApi != null) && chatApi.isServiceRegistered()) {
-				registered = true;
-			}
-		} catch(Exception e) {}
-		if (!registered) {
-			Utils.showMessage(ChatView.this, getString(R.string.label_service_not_available));
-			return;
-		}
-
-		// Send text message
-		String msgId = sendMessage(text);
-		if (msgId != null) {
-			// Add text to the message history
-			addMessageHistory(ChatLog.Message.Direction.OUTGOING, getString(R.string.label_me), text);
-			composeText.setText(null);
-		} else {
-			Utils.showMessage(ChatView.this, getString(R.string.label_send_im_failed));
-		}
+		new bgStuff().execute();
 	}
 
 
@@ -494,7 +616,7 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 				String txt = "Put-Cook";
 				composeText.setText(txt);
 				sendText();
-				composeText.setText("");
+				
 				
 				orderBtn.setBackground(getResources().getDrawable(R.drawable.cooking));
 				
@@ -509,7 +631,6 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 				String txt = "Put-Finish";
 				composeText.setText(txt);
 				sendText();
-				composeText.setText("");
 				
 				orderBtn.setVisibility(View.GONE);
 				return;
@@ -527,7 +648,6 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 				String txt = "Put-Order";
 				composeText.setText(txt);
 				sendText();
-				composeText.setText("");
 				
 				Chat_layout.setVisibility(View.GONE);
 				startChatBtn.setVisibility(View.VISIBLE);
@@ -556,6 +676,7 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 			
 			kitchen_ordered=true;
 			orderBtn.setVisibility(View.VISIBLE);
+			orderBtn.setBackground(getResources().getDrawable(R.drawable.ordered));
 			
 			return null;
 		}
@@ -601,13 +722,10 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 
 		if(after_process!=null)
 		{
-			//only speek for the chief
-			if(Consts.KITCHEN)
-				SpeakOut(after_process);
-
-			// Quit the session
-			//quitSession();
-			addMessageHistory(ChatLog.Message.Direction.INCOMING, contact, after_process);
+			
+			new reStuff(after_process, contact).execute();
+			
+			
 		}
 	}
 
