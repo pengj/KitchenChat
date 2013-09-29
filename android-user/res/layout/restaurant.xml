@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="20dp"
+    android:background="@color/white"
+    >
+    
+	<FrameLayout
+	    android:id="@+id/welcome"
+	    android:layout_width="match_parent"
+	    android:layout_height="424px"
+	>
+		<ImageView
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:contentDescription="@string/image_content_description"
+		    android:src="@drawable/welcome" />
+
+	<TextView
+	    android:id="@+id/nickname_welcome"
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:textSize="30sp"
+	    android:gravity="center"
+	    android:fontFamily="sans-serif-light"
+	    android:layout_alignParentTop="true"
+	    />
+	
+			</FrameLayout>
+	
+<!--
+	<View
+	    android:layout_width="match_parent"
+	    android:layout_height="4dp"
+	    android:background="@drawable/divider"
+	    android:layout_marginTop="10dp"
+	    android:layout_marginBottom="10dp"
+	    />
+	
+	<TextView
+	    android:layout_width="match_parent"
+	    android:layout_height="wrap_content"
+	    android:text="Our menu for you"
+	    android:textSize="10sp"
+	    android:textAllCaps="true"
+	    android:textStyle="bold"
+	    />
+	
+	<View
+	    android:layout_width="match_parent"
+	    android:layout_height="4dp"
+	    android:background="@drawable/divider"
+	    android:layout_marginTop="10dp"
+	    android:layout_marginBottom="10dp"
+	    />-->
+	    
+	    <ListView
+	        android:id="@+id/menu_list"
+	        android:layout_width="match_parent"
+	        android:layout_below="@id/welcome"
+	        android:layout_height="wrap_content"
+	        />
+</RelativeLayout>
