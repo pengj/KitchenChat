@@ -6,5 +6,5 @@ public class Consts {
 	
 	public static final String KITCHEM_PHONE ="+33678746644";
 	
-	public static final boolean KITCHEN = false;
+	public static final boolean KITCHEN = true;
 }
