@@ -35,7 +35,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputFilter;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
@@ -311,8 +310,8 @@ public class SingleChatView extends ChatView {
     
     @Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inflater = new MenuInflater(getApplicationContext());
-		//inflater.inflate(R.menu.menu_chat, menu);
+		// MenuInflater inflater = new MenuInflater(getApplicationContext());
+		// inflater.inflate(R.menu.menu_chat, menu);
 		return true;
 	}
     
