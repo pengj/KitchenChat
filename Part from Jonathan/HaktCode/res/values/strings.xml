@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">HaktCode</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="title_activity_menu">MenuActivity</string>
+    <string name="title_activity_qrscanner">QRScannerActivity</string>
+    <string name="title_activity_qr_result">QrResultActivity</string>
+    <string name="title_activity_joyn_sdk">JoynSdkActivity</string>
+    <string name="title_activity_chef_view">ChefViewActivity</string>
+    <string name="title_activity_web_view">WebViewActivity</string>
+    <string name="title_activity_view_item">ViewItemActivity</string>
+
+</resources>
