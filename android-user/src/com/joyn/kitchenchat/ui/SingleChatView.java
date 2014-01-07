@@ -27,13 +27,17 @@ import org.gsma.joyn.chat.ChatListener;
 import org.gsma.joyn.chat.ChatLog;
 import org.gsma.joyn.chat.ChatMessage;
 
+import org.json.JSONObject;
+
 import com.joyn.kitchenchat.R;
+import com.joyn.kitchenchat.com.Consts;
 import com.joyn.kitchenchat.network.Utils;
 
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputFilter;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -82,6 +86,9 @@ public class SingleChatView extends ChatView {
      */
     private MyChatListener chatListener = new MyChatListener();	
     
+  
+
+    
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,6 +107,8 @@ public class SingleChatView extends ChatView {
 		
 		// Load history
 		loadHistory();
+		
+		
     }
     
     @Override
@@ -124,6 +133,10 @@ public class SingleChatView extends ChatView {
     public static boolean isDisplayed() {
     	return activityDisplayed;
     }
+    
+    
+
+    
     
     /**
      * Callback called when service is connected. This method is called when the

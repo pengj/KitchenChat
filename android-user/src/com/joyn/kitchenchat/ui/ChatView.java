@@ -26,6 +26,14 @@ import org.gsma.joyn.chat.ChatLog;
 import org.gsma.joyn.chat.ChatMessage;
 import org.gsma.joyn.chat.ChatService;
 import org.gsma.joyn.contacts.ContactsService;
+import org.jivesoftware.smack.Chat;
+import org.jivesoftware.smack.ChatManager;
+import org.jivesoftware.smack.Connection;
+import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.MessageListener;
+import org.jivesoftware.smack.SmackAndroid;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
 
 import com.joyn.kitchenchat.R;
 import com.joyn.kitchenchat.com.Consts;
@@ -39,6 +47,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -97,11 +106,11 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 	 * Send button
 	 */
 	protected Button sendBtn;
-	
+
 	protected ImageButton startChatBtn, talkChatBtn;
-	
+
 	protected ImageButton orderBtn;
-	
+
 	protected ScrollView sendTextView;
 
 
@@ -111,20 +120,20 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 	protected LinearLayout Chat_layout;
 
 	protected boolean Chat_on=false;
-	
-	
+
+
 	//for the order 
 	protected boolean user_ordered = false;
-	
+
 	protected boolean user_cooked = false;
-	
+
 	protected boolean user_finished = false;
-	
-	
+
+
 	protected boolean kitchen_ordered = false;
-	
+
 	protected boolean kitchen_cooked = false;
-	
+
 	protected boolean kitchen_finished = false;
 
 	/**
@@ -143,6 +152,9 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 	protected IsComposingManager composingManager = null;
 
 
+	ChatManager chatmanager;
+	org.jivesoftware.smack.Chat newChat;
+	Connection connection;
 
 	/**
 	 * TextToSpeech
@@ -171,13 +183,13 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 
 		// Set send button listener
 		sendBtn = (Button)findViewById(R.id.send_button);
-		
+
 		startChatBtn = (ImageButton)findViewById(R.id.button_chat);
-		
+
 		talkChatBtn = (ImageButton)findViewById(R.id.button_talk);
-		
+
 		orderBtn = (ImageButton)findViewById(R.id.button_order);
-		
+
 		sendTextView = (ScrollView)findViewById(R.id.layout_text);
 
 
@@ -198,7 +210,66 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 
 
 		tts = new TextToSpeech(this, this);
+
+
+		new ActivateListener().execute();
 	}
+	
+	
+    private class ActivateListener extends AsyncTask<Void, Void, Void> {
+
+
+
+		@Override
+		protected Void doInBackground(Void... params) {
+			try {
+				connection= getConnection(Consts.SENDER, Consts.pass_xmpp);
+
+				chatmanager = connection.getChatManager();
+
+				newChat = chatmanager.createChat(Consts.RECEIVER+"@"+Consts.XMPP_HOST_NAME, new MessageListener() {
+
+					@Override
+					public void processMessage(
+							org.jivesoftware.smack.Chat arg0, org.jivesoftware.smack.packet.Message msg) {
+						// TODO Auto-generated method stub
+						displayReceivedMessage(msg.getBody(), msg.getFrom());
+					}
+
+				});
+			} catch (XMPPException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
+		}
+
+	}
+    
+    
+	public Connection getConnection(String login, String password)
+			throws XMPPException {
+
+		SmackAndroid asmk = SmackAndroid.init(this);
+		ConnectionConfiguration config = new ConnectionConfiguration(
+				Consts.XMPP_HOST, Consts.XMPP_PORT);
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+			config.setTruststoreType("AndroidCAStore");
+			config.setTruststorePassword(null);
+			config.setTruststorePath(null);
+		} else {
+		
+		}
+
+		Connection connection = new XMPPConnection(config);
+		// Connect to the server
+		connection.connect();
+		connection.login(login, password,"fdasfdasdfs");
+		return connection;
+
+	}
+	
 
 
 	private void Check_chiefUI(){
@@ -206,15 +277,15 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 		if(Consts.KITCHEN)
 		{
 			sendBtn.setText("Talk");
-			
+
 			Chat_layout.setVisibility(View.VISIBLE);
-			
+
 			startChatBtn.setVisibility(View.GONE);
-			
+
 			orderBtn.setVisibility(View.GONE);
-			
+
 			talkChatBtn.setVisibility(View.VISIBLE);
-			
+
 			sendTextView.setVisibility(View.GONE);
 
 			Chat_on =true;
@@ -264,7 +335,7 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 		}
 
 	}
-	
+
 
 
 	private void SpeakOut(String text){
@@ -273,144 +344,150 @@ public abstract class ChatView extends ListActivity implements OnClickListener, 
 			tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
 
 	}
-	
-	
-	
-class reStuff extends AsyncTask<Void, Void, Void>{
-        
-        String translatedText = "";
-        String pre_text="";
-        String contact = "";
-        
-        
-        public reStuff(String text, String c)
-        {
-        	pre_text=text;
-        	contact = c;
-        	
-        }
-        
-        @Override
-        protected Void doInBackground(Void... params) {
-            // TODO Auto-generated method stub
-            try {
-                
-                if(pre_text.contains("Put-Order")||pre_text.contains("Put-Cook")||pre_text.contains("Put-Finish"))
-                {
-                	translatedText = pre_text;
-                }else{
-                	translatedText = Translate(pre_text);
-                }
-                
-                
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                translatedText = e.toString();
-            }
-             
-            return null;
-        }
 
-        @Override
-        protected void onPostExecute(Void result) {
-        
-        	//only speek for the chief
+
+
+	class reStuff extends AsyncTask<Void, Void, Void>{
+
+		String translatedText = "";
+		String pre_text="";
+		String contact = "";
+
+
+		public reStuff(String text, String c)
+		{
+			pre_text=text;
+			contact = c;
+
+		}
+
+		@Override
+		protected Void doInBackground(Void... params) {
+			// TODO Auto-generated method stub
+			try {
+
+				if(pre_text.contains("Put-Order")||pre_text.contains("Put-Cook")||pre_text.contains("Put-Finish"))
+				{
+					translatedText = pre_text;
+				}else{
+					translatedText = Translate(pre_text);
+				}
+
+
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				translatedText = e.toString();
+			}
+
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+
+			//only speek for the chief
 			if(Consts.KITCHEN)
 				SpeakOut(translatedText);
 
 			// Quit the session
-			
-			
-			
+
+
+
 			addMessageHistory(ChatLog.Message.Direction.INCOMING, contact, translatedText);
-    		
-        }
-         
-    }
-	
-	
+
+		}
+
+	}
+
+
 	class bgStuff extends AsyncTask<Void, Void, Void>{
-        
-        String translatedText = "";
-        @Override
-        protected Void doInBackground(Void... params) {
-            // TODO Auto-generated method stub
-            try {
-                String text = composeText.getText().toString();
-                
-                if(text.contains("Put-Order")||text.contains("Put-Cook")||text.contains("Put-Finish"))
-                {
-                	translatedText = text;
-                }else{
-                	translatedText = Translate(text);
-                }
-                
-                
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                translatedText = e.toString();
-            }
-             
-            return null;
-        }
 
-        @Override
-        protected void onPostExecute(Void result) {
-        	Log.d(TAG, "Send Text:"+translatedText);
-    		
-    		// Check if the service is available
-    		boolean registered = false;
-    		try {
-    			if ((chatApi != null) && chatApi.isServiceRegistered()) {
-    				registered = true;
-    			}
-    		} catch(Exception e) {}
-    		if (!registered) {
-    			Utils.showMessage(ChatView.this, getString(R.string.label_service_not_available));
-    			return;
-    		}
+		String translatedText = "";
+		@Override
+		protected Void doInBackground(Void... params) {
+			// TODO Auto-generated method stub
+			try {
+				String text = composeText.getText().toString();
 
-    		// Send text message
-    		String msgId = sendMessage(translatedText);
-    		if (msgId != null) {
-    			// Add text to the message history
-    			addMessageHistory(ChatLog.Message.Direction.OUTGOING, getString(R.string.label_me), translatedText);
-    			composeText.setText(null);
-    		} else {
-    			Utils.showMessage(ChatView.this, getString(R.string.label_send_im_failed));
-    		}
-        }
-         
-    }
-	
-	
+				if(text.contains("Put-Order")||text.contains("Put-Cook")||text.contains("Put-Finish"))
+				{
+					translatedText = text;
+				}else{
+					translatedText = Translate(text);
+				}
+
+
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				translatedText = e.toString();
+			}
+
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+			Log.d(TAG, "Send Text:"+translatedText);
+
+			// Check if the service is available
+			/*boolean registered = false;
+			try {
+				if ((chatApi != null) && chatApi.isServiceRegistered()) {
+					registered = true;
+				}
+			} catch(Exception e) {}
+			if (!registered) {
+				Utils.showMessage(ChatView.this, getString(R.string.label_service_not_available));
+				return;
+			}*/
+
+			// Send text message
+			//String msgId = sendMessage(translatedText);
+			try {
+				newChat.sendMessage(translatedText);
+			}
+			catch (XMPPException e) {
+				System.out.println("Error Delivering block");
+			}
+			/*if (msgId != null) {
+				// Add text to the message history
+				addMessageHistory(ChatLog.Message.Direction.OUTGOING, getString(R.string.label_me), translatedText);
+				composeText.setText(null);
+			} else {
+				Utils.showMessage(ChatView.this, getString(R.string.label_send_im_failed));
+			}*/
+		}
+
+	}
+
+
 	private String Translate(String text){
-		
-		   Translate.setClientId("JoynKitchenTest");
-	       Translate.setClientSecret("R3PJJGUubanOcm8Ifl6fHZ2OS2L48Ymm6fqAb9/TLA4=");
-	        
-	       String translatedText = text;
-	        
-	       // English AUTO_DETECT -> France Change this if u wanna other languages
-	       try {
-	    	if(Consts.KITCHEN)
-	    	{
-	    		translatedText = Translate.execute(text,Language.FRENCH);
-	    	}else{
-	    		translatedText = Translate.execute(text,Language.ENGLISH);
-	    	}
-			
+
+		Translate.setClientId("JoynKitchenTest");
+		Translate.setClientSecret("R3PJJGUubanOcm8Ifl6fHZ2OS2L48Ymm6fqAb9/TLA4=");
+
+		String translatedText = text;
+
+		// English AUTO_DETECT -> France Change this if u wanna other languages
+		try {
+			if(Consts.KITCHEN)
+			{
+				translatedText = Translate.execute(text,Language.FRENCH);
+			}else{
+				translatedText = Translate.execute(text,Language.ENGLISH);
+			}
+
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-	       return translatedText;
-		
-		
+		return translatedText;
+
+
 	}
-	
+
 
 	/**
 	 * Message composer listener
@@ -443,20 +520,20 @@ class reStuff extends AsyncTask<Void, Void, Void>{
 
 
 	}
-	
+
 	public void onTalkChat(View v){
 		Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 		intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
 				RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-		
+
 		intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fr");
 		intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "fr"); 
-		
+
 		intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Android Voice Recognition...");
 		startActivityForResult(intent, REQUEST_CODE);
-		
+
 	}
-	
+
 
 
 	/**
@@ -466,9 +543,9 @@ class reStuff extends AsyncTask<Void, Void, Void>{
 	public void onStartChat(View v){
 
 		Chat_layout.setVisibility(View.VISIBLE);
-		
+
 		startChatBtn.setVisibility(View.GONE);
-		
+
 		talkChatBtn.setVisibility(View.GONE);
 
 		Chat_on =true;
@@ -487,7 +564,7 @@ class reStuff extends AsyncTask<Void, Void, Void>{
 			composeText.setText(matches.get(0));
 
 			sendText();
-			
+
 
 		}
 		super.onActivityResult(requestCode, resultCode, data);
@@ -580,7 +657,7 @@ class reStuff extends AsyncTask<Void, Void, Void>{
 	private void sendText() {
 
 		String text = composeText.getText().toString();
-		
+
 		text=Parse_SendText(text);
 
 
@@ -589,17 +666,19 @@ class reStuff extends AsyncTask<Void, Void, Void>{
 		}
 
 		new bgStuff().execute();
+		
+		composeText.setText("");
 	}
 
 
-	
-	
+
+
 	public void onOrderClick(View v)
 	{
-		
+
 		if(Consts.KITCHEN)
 		{
-			
+
 			//send cooking
 			if(kitchen_ordered)
 			{
@@ -607,31 +686,31 @@ class reStuff extends AsyncTask<Void, Void, Void>{
 				String txt = "Put-Cook";
 				composeText.setText(txt);
 				sendText();
-				
-				
+
+
 				orderBtn.setBackground(getResources().getDrawable(R.drawable.cooking));
-				
+
 				kitchen_cooked=true;
 				kitchen_ordered=false;
-				
+
 				return;
-			//send finished	
+				//send finished	
 			}else if( kitchen_cooked)
 			{
 				//send finish informaiton to user
 				String txt = "Put-Finish";
 				composeText.setText(txt);
 				sendText();
-				
+
 				orderBtn.setVisibility(View.GONE);
 				return;
 			}
-			
-			
-			
-			
+
+
+
+
 		}else{
-			
+
 			if(! user_ordered)
 			{
 				user_ordered = true;
@@ -639,61 +718,61 @@ class reStuff extends AsyncTask<Void, Void, Void>{
 				String txt = "Put-Order";
 				composeText.setText(txt);
 				sendText();
-				
+
 				Chat_layout.setVisibility(View.GONE);
 				startChatBtn.setVisibility(View.VISIBLE);
 				startChatBtn.setBackground(getResources().getDrawable(R.drawable.chef_busy));
-				
-				
+
+
 			}
-			
+
 		}
-		
-		
+
+
 	}
-	
+
 	private String Parse_SendText(String txt){
 
-		
+
 		return txt;
 
 
 	}
-	
+
 	private String Parse_ReceviedText(String txt){
-		
+
 		if(txt.contentEquals("Put-Order"))
 		{
-			
+
 			kitchen_ordered=true;
 			orderBtn.setVisibility(View.VISIBLE);
 			orderBtn.setBackground(getResources().getDrawable(R.drawable.ordered));
-			
+
 			return null;
 		}
-		
+
 		if(txt.contentEquals("Put-Cook"))
 		{
 			orderBtn.setBackground(getResources().getDrawable(R.drawable.waiting));
 			kitchen_cooked=true;
-			
+
 			return null;
 		}
-		
+
 		if(txt.contentEquals("Put-Finish"))
 		{
 			orderBtn.setBackground(getResources().getDrawable(R.drawable.cooked));
 			kitchen_finished=true;
 			startChatBtn.setVisibility(View.VISIBLE);
 			startChatBtn.setBackground(getResources().getDrawable(R.drawable.thank_chef));
-			
+
 			return null;
 		}
-		
-		
-		
-		
-		
+
+
+
+
+
 		return txt;
 	}
 
@@ -713,11 +792,26 @@ class reStuff extends AsyncTask<Void, Void, Void>{
 
 		if(after_process!=null)
 		{
-			
+
 			new reStuff(after_process, contact).execute();
-			
-			
+
+
 		}
+	}
+
+
+
+	protected void displayReceivedMessage(String txt, String contact) {
+		String after_process = Parse_ReceviedText(txt);
+
+		if(after_process!=null)
+		{
+
+			new reStuff(after_process, contact).execute();
+
+
+		}
+
 	}
 
 
